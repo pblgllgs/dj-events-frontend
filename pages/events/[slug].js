@@ -5,6 +5,7 @@ import styles from '@/styles/Event.module.css';
 import Link from 'next/link';
 import { FaPencilAlt, FaTimes } from 'react-icons/fa';
 import Image from 'next/image';
+import qs from 'qs';
 
 const EventPage = ({ evt, img }) => {
     const { id, attributes } = evt;
@@ -70,18 +71,24 @@ export const getStaticPaths = async () => {
 //- The data can be publicly cached (not user-specific).
 //- The page must be pre-rendered (for SEO) and be very fast — getStaticProps generates HTML and JSON files, both of which can be cached by a CDN for performance.
 export const getStaticProps = async ({ params: { slug } }) => {
-    const res = await fetch(`${API_URL}/api/events`);
+    const query = qs.stringify({
+        filters: {
+            slug: {
+                $contains: slug,
+            },
+        },
+    });
+    const res = await fetch(`${API_URL}/api/events?${query}`);
     const events = await res.json();
     const { data } = events;
-    const resp = data.filter((evt) => evt.attributes.slug === slug);
-    const [resultado] = resp;
+    const [evt] = data;
     const res2 = await fetch(`${API_URL}/api/upload/files`);
     const imgs = await res2.json();
-    const img = imgs.filter((evt) => evt.id === resultado.id);
+    const img = imgs.filter((evt) => evt.id === data[0].id);
     const [image] = img;
     return {
         props: {
-            evt: resultado,
+            evt,
             img: image.url,
         },
         revalidate: 10,
