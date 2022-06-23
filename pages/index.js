@@ -3,16 +3,16 @@ import Layout from '@/components/Layout';
 import { API_URL } from '@/config/index';
 import Link from 'next/link';
 
-export default function HomePage({ events }) {
+export default function HomePage({ data, imgs }) {
     return (
         <Layout title={'Home'}>
             <h1>Upcoming Events</h1>
-            {events.length === 0 && <h3>No events</h3>}
+            {data.length === 0 && <h3>No events</h3>}
 
-            {events.map((evt) => (
-                <EventItem key={evt.id} evt={evt} />
+            {data.map((evt) => (
+                <EventItem key={evt.id} evt={evt} imgs={imgs} />
             ))}
-            {events.length > 0 && (
+            {data.length > 0 && (
                 <Link href={'/events'}>
                     <a className="btn-secondary">View all events</a>
                 </Link>
@@ -24,9 +24,13 @@ export default function HomePage({ events }) {
 // You should use getServerSideProps when:
 // - Only if you need to pre-render a page whose data must be fetched at request time
 export const getServerSideProps = async () => {
-    const res = await fetch(`${API_URL}/api/events`);
-    const events = await res.json();
+    const res1 = await fetch(`${API_URL}/api/events?_sort=date:ASC&_limit=3`);
+    const events = await res1.json();
+    const { data } = events;
+
+    const res2 = await fetch(`${API_URL}/api/upload/files`);
+    const imgs = await res2.json();
     return {
-        props: { events: events.slice(0, 3) },
+        props: { data, imgs },
     };
 };

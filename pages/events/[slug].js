@@ -6,16 +6,16 @@ import Link from 'next/link';
 import { FaPencilAlt, FaTimes } from 'react-icons/fa';
 import Image from 'next/image';
 
-const EventPage = ({ evt }) => {
+const EventPage = ({ evt, img }) => {
+    const { id, attributes } = evt;
     const deleteEvent = (e) => {
         console.log('delete');
     };
-
     return (
         <Layout>
             <div className={styles.event}>
                 <div className={styles.controls}>
-                    <Link href={`/events/edit/${evt.id}`}>
+                    <Link href={`/events/edit/${id}`}>
                         <a>
                             <FaPencilAlt />
                             Edit Event
@@ -27,19 +27,17 @@ const EventPage = ({ evt }) => {
                     </a>
                 </div>
                 <span>
-                    {evt.date} as {evt.time}
+                    {attributes.date} as {attributes.time}
                 </span>
-                <h1>{evt.name}</h1>
-                {evt.image && (
-                    <div className={styles.image}>
-                        <Image src={evt.image} width={960} height={600} />
-                    </div>
-                )}
+                <h1>{attributes.name}</h1>
+                <div className={styles.image}>
+                    <Image src={img} width={960} height={600} />
+                </div>
                 <h3>Performers:</h3>
-                <p>{evt.performers}</p>
+                <p>{attributes.performers}</p>
                 <h3>Description:</h3>
-                <p>{evt.description}</p>
-                <h3>Venue: {evt.venue}</h3>
+                <p>{attributes.description}</p>
+                <h3>Venue: {attributes.venue}</h3>
                 <p>{evt.address}</p>
                 <Link href={'/events'}>
                     <a className={styles.back}>{'<'} Go back</a>
@@ -56,10 +54,10 @@ export const getStaticPaths = async () => {
     // your fetch function here
     const res = await fetch(`${API_URL}/api/events`);
     const events = await res.json();
-    const paths = events.map((evt) => ({
-        params: { slug: evt.slug },
+    const { data } = events;
+    const paths = data.map((evt) => ({
+        params: { slug: evt.attributes.slug },
     }));
-
     return {
         paths,
         fallback: true,
@@ -72,11 +70,19 @@ export const getStaticPaths = async () => {
 //- The data can be publicly cached (not user-specific).
 //- The page must be pre-rendered (for SEO) and be very fast — getStaticProps generates HTML and JSON files, both of which can be cached by a CDN for performance.
 export const getStaticProps = async ({ params: { slug } }) => {
-    const res = await fetch(`${API_URL}/api/events/${slug}`);
+    const res = await fetch(`${API_URL}/api/events`);
     const events = await res.json();
+    const { data } = events;
+    const resp = data.filter((evt) => evt.attributes.slug === slug);
+    const [resultado] = resp;
+    const res2 = await fetch(`${API_URL}/api/upload/files`);
+    const imgs = await res2.json();
+    const img = imgs.filter((evt) => evt.id === resultado.id);
+    const [image] = img;
     return {
         props: {
-            evt: events[0],
+            evt: resultado,
+            img: image.url,
         },
         revalidate: 10,
     };
